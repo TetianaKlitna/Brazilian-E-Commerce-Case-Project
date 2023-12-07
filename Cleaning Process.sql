@@ -453,3 +453,6 @@ alter table sales.olist_sellers drop column seller_city, seller_state;
 alter table sales.olist_customers add constraint fk_customers_zip_code foreign key(customer_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
 --Added Foreign Key on column "seller_zip_code_prefix" to sales.olist_sellers(zip_code_prefix)
 alter table sales.olist_sellers add constraint fk_seller_zip_code foreign key(seller_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
+
+--Created Index on table sales.olist_geolocation
+create index ind_zip_code_prefix on sales.olist_geolocation(geolocation_zip_code_prefix);
