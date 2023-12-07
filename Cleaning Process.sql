@@ -489,3 +489,10 @@ set full_name_state = case  when abbr_state = 'AC' then 'Acre'
 							when abbr_state = 'SP' then 'Sao Paulo'
 							when abbr_state = 'SE' then 'Sergipe'
 							when abbr_state = 'TO' then 'Tocantins' end;
+
+--Corrected city names in the sales.olist_geolocation table
+begin transaction
+update sales.olist_geolocation
+set geolocation_city = translate(geolocation_city, 'ááãâçéêíóôõúü', 'aaaaceeiooouu');
+commit transaction;	
+
