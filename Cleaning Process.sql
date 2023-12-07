@@ -455,6 +455,7 @@ alter table sales.olist_customers add constraint fk_customers_zip_code foreign k
 alter table sales.olist_sellers add constraint fk_seller_zip_code foreign key(seller_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
 
 --Removed dublicates in the sales.olist_geolocation
+--Removed 17986 from 720346
 begin transaction
 delete res
 	from (
