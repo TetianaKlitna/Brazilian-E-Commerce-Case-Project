@@ -454,6 +454,20 @@ alter table sales.olist_customers add constraint fk_customers_zip_code foreign k
 --Added Foreign Key on column "seller_zip_code_prefix" to sales.olist_sellers(zip_code_prefix)
 alter table sales.olist_sellers add constraint fk_seller_zip_code foreign key(seller_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
 
+--Removed dublicates in the sales.olist_geolocation
+begin transaction
+delete res
+	from (
+	select * 
+		from 
+		 (
+			 select r.*, row_number() over(partition by geolocation_zip_code_prefix, geolocation_lat, geolocation_lng, geolocation_city, geolocation_state order by  geolocation_zip_code_prefix, geolocation_state, geolocation_city) rank
+			 from sales.olist_geolocation r
+		 ) t
+	 where rank > 1
+) res;
+commit transaction; 
+
 --Created Index on table sales.olist_geolocation
 create index ind_zip_code_prefix on sales.olist_geolocation(geolocation_zip_code_prefix);
 
@@ -495,4 +509,10 @@ begin transaction
 update sales.olist_geolocation
 set geolocation_city = translate(geolocation_city, 'ááãâçéêíóôõúü', 'aaaaceeiooouu');
 commit transaction;	
+
+--Checked city name for correctness
+--Quilometro 14 do Mutum, Espirito Santo, Brazil is valid name
+select *
+from sales.olist_locations
+where city like '%[0-9]%';
 
