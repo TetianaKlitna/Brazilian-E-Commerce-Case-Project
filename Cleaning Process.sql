@@ -456,3 +456,36 @@ alter table sales.olist_sellers add constraint fk_seller_zip_code foreign key(se
 
 --Created Index on table sales.olist_geolocation
 create index ind_zip_code_prefix on sales.olist_geolocation(geolocation_zip_code_prefix);
+
+--Renamed state in the sales.olist_locations to abbr_state
+
+--Added new column state_full_name
+alter table sales.olist_locations add full_name_state nvarchar(50);
+update sales.olist_locations 
+set full_name_state = case  when abbr_state = 'AC' then 'Acre'
+							when abbr_state = 'AL' then 'Alagoas'
+							when abbr_state = 'AP' then 'Amapa'
+							when abbr_state = 'AM' then 'Amazonas'
+							when abbr_state = 'BA' then 'Bahia'
+							when abbr_state = 'CE' then 'Ceara'
+							when abbr_state = 'DF' then 'Distrito Federal'
+							when abbr_state = 'ES' then 'Espirito Santo'
+							when abbr_state = 'GO' then 'Goias'
+							when abbr_state = 'MA' then 'Maranhao'
+							when abbr_state = 'MT' then 'Mato Grosso'
+							when abbr_state = 'MS' then 'Mato Grosso do Sul'
+							when abbr_state = 'MG' then 'Minas Gerais'
+							when abbr_state = 'PA' then 'Para'
+							when abbr_state = 'PB' then 'Paraiba'
+							when abbr_state = 'PR' then 'Rio Grande do Sul'
+							when abbr_state = 'PE' then 'Pernambuco'
+							when abbr_state = 'PI' then 'Piaui'
+							when abbr_state = 'RJ' then 'Rio de Janeiro'
+							when abbr_state = 'RN' then 'Rio Grande do Norte'
+							when abbr_state = 'RS' then 'Rio Grande do Sul'
+							when abbr_state = 'RO' then 'Rondonia'
+							when abbr_state = 'RR' then 'Roraima'
+							when abbr_state = 'SC' then 'Santa Catarina'
+							when abbr_state = 'SP' then 'Sao Paulo'
+							when abbr_state = 'SE' then 'Sergipe'
+							when abbr_state = 'TO' then 'Tocantins' end;
