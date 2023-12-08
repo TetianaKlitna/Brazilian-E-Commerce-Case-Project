@@ -20,10 +20,11 @@ with reviews as (
 	from sales.v_last_order_reviews e
 	group by e.review_score
 )
-select r.review_score
-      , r.amount_orders
-      , sum(amount_orders) over(order by amount_orders desc) running_amount_sum
-      , sum(amount_orders) over(order by amount_orders desc)/cast(sum(amount_orders)over() as float)*100 running_percent_amount_orders
+select 
+      r.review_score,
+      r.amount_orders,
+      sum(amount_orders) over(order by amount_orders desc) running_amount_sum,
+      sum(amount_orders) over(order by amount_orders desc)/cast(sum(amount_orders)over() as float)*100 running_percent_amount_orders
 from reviews r
 order by 2 desc
 
@@ -128,10 +129,10 @@ having count(distinct i.order_id) > 10
 )
 select top(10) with ties
       full_name_state, 
-	  coalesce(satisfied_reviews,  0)  satisfied_reviews,
+      coalesce(satisfied_reviews,  0)  satisfied_reviews,
       coalesce(dissatisfied_reviews,  0) dissatisfied_reviews, 
-	  coalesce(without_review,  0) without_review,
-	  round(coalesce(dissatisfied_reviews,  0)/cast( coalesce(dissatisfied_reviews,  0) + coalesce(satisfied_reviews,  0) + coalesce(without_review,  0) as float)*100, 2) percent_dissatisfied_reviews
+      coalesce(without_review,  0) without_review,
+      round(coalesce(dissatisfied_reviews,  0)/cast( coalesce(dissatisfied_reviews,  0) + coalesce(satisfied_reviews,  0) + coalesce(without_review,  0) as float)*100, 2) percent_dissatisfied_reviews
 from sellers TableForPivot
 pivot  
 (  
@@ -149,7 +150,7 @@ order by  (coalesce(dissatisfied_reviews,  0) + coalesce(satisfied_reviews,  0) 
 	    count(distinct i.order_id) amount_orders
  from sales.olist_order_items i inner join sales.olist_products p on i.product_id = p.product_id
                                 left join sales.v_last_order_reviews r on i.order_id = r.order_id
-								left join sales.olist_product_category_name_translation t on p.product_category_name = t.product_category_name
+				left join sales.olist_product_category_name_translation t on p.product_category_name = t.product_category_name
  group by t.product_category_name_english, 
   case when r.review_score is null then 'without_review'
        when r.review_score < 3 then 'dissatisfied_reviews'
