@@ -20,6 +20,7 @@ alter table sales.olist_customers      add constraint pk_olist_customer_customer
 alter table sales.olist_order_reviews  add constraint pk_olist_reviews              primary key(review_id, order_id);
 alter table sales.olist_order_items    add constraint pk_olist_order_items          primary key(order_id, order_item_id);
 alter table sales.olist_order_payments add constraint pk_olist_order_payments       primary key(order_id, payment_sequential);
+alter table sales.olist_product_category_name_translation add constraint pk_olist_product_name primary key(product_category_name);
 
 alter table sales.olist_order_items    add constraint fk_orders        foreign key(order_id)    references sales.olist_orders(order_id) on delete cascade;
 alter table sales.olist_order_items    add constraint fk_products      foreign key(product_id)  references sales.olist_products(product_id);
