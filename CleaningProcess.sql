@@ -169,293 +169,13 @@ select *
 from sales.v_last_order_reviews
 where order_id = 'bfbd0f9bdef84302105ad712db648a6c';
 
--- Corrected the name of a city in the table sales.olist_customers table by capitalizing the first letter.
+--Corrected city names in the sales.olist_geolocation table
 begin transaction
-update e
-set e.customer_city = a.new_customer_city
-from  sales.olist_customers  e
-	inner join (
-		select  customer_id, customer_unique_id, customer_state, customer_zip_code_prefix, customer_city, STRING_AGG(value, ' ') new_customer_city
-		from (
-			select customer_id, customer_unique_id,customer_state, customer_zip_code_prefix , 
-			       case when value in ('de', 'do', 'dos', 'da') then value
-			            else upper(left(value, 1)) + substring(value, 2, len(value)) end  value,
-					customer_city
-			from sales.olist_customers cross apply string_split(customer_city, ' ')
-			) res
-		group by customer_id, customer_unique_id, customer_state, customer_zip_code_prefix, customer_city
-		) a
-on e.customer_city = a.customer_city;
+update sales.olist_geolocation
+set geolocation_city = translate(geolocation_city, 'ááãâçéêíóôõúü', 'aaaaceeiooouu');
 commit transaction;
 
--- Created new table sales.olist_locations 
--- with columns: zip_code prefix int not null; city nvarchar(50) not null, state nvarchar(50) not null
-drop table if exists sales.olist_locations;
-
-select zip_code_prefix, city, state
-into sales.olist_locations
-from (
-	select  customer_zip_code_prefix as zip_code_prefix, customer_city as city, customer_state as state
-	from sales.olist_customers
-	union
-	select  seller_zip_code_prefix, seller_city, seller_state
-	from sales.olist_sellers) res;
-
---Generated scripts to correct values in the sales.olist_locations
-select ' update sales.olist_locations set city = ''' + d.geolocation_city +  '''' + 
-	   ' where city = ''' + t.city + ''' and zip_code_prefix = ' + cast(t.zip_code_prefix as nvarchar) + ' and state = ''' + t.state + ''';' script
-from 
-(
-	select r.*, row_number() over(partition by zip_code_prefix order by (select null)) rank
-	from sales.olist_locations r
-) t left join 
-(
-    select distinct g.geolocation_zip_code_prefix, g.geolocation_state, g.geolocation_city
-	from sales.olist_geolocation g ) d on t.zip_code_prefix = d.geolocation_zip_code_prefix and t.state = d.geolocation_state
-where rank > 1 and t.city <> d.geolocation_city;
-
-begin transaction
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulo Sp' and zip_code_prefix = 1207 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Pauo' and zip_code_prefix = 2051 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = N'São Paulo' and zip_code_prefix = 4557 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sp / Sp' and zip_code_prefix = 3363 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulo - Sp' and zip_code_prefix = 4130 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulo / Sao Paulo' and zip_code_prefix = 3407 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulo - Sp' and zip_code_prefix = 4007 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao  Paulo' and zip_code_prefix = 5303 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulo - Sp' and zip_code_prefix = 5353 and state = 'SP';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paulop' and zip_code_prefix = 3581 and state = 'SP';
-  update sales.olist_locations set city = 'Sao Paulo' where city = 'Sao Paluo' and zip_code_prefix = 8050 and state = 'SP';
- update sales.olist_locations set city = 'Guarulhos' where city = 'Garulhos' and zip_code_prefix = 7077 and state = 'SP';
- update sales.olist_locations set city = 'Santo Andre' where city = 'Santo Andre/sao Paulo' and zip_code_prefix = 9230 and state = 'SP';
- update sales.olist_locations set city = 'Sao Bernardo do Campo' where city = 'Ao Bernardo do Campo' and zip_code_prefix = 9687 and state = 'SP';
- update sales.olist_locations set city = 'Sao Bernardo do Campo' where city = 'Sao Bernardo do Capo' and zip_code_prefix = 9721 and state = 'SP';
- update sales.olist_locations set city = 'Sao Bernardo do Campo' where city = 'Sbc/sp' and zip_code_prefix = 9726 and state = 'SP';
-  update sales.olist_locations set city = 'Sao Bernardo do Campo' where city = 'Sbc' and zip_code_prefix = 9861 and state = 'SP';
- update sales.olist_locations set city = 'Santa Barbara d''Oeste' where city = 'Santa Barbara D´oeste' and zip_code_prefix = 13450 and state = 'SP';
- update sales.olist_locations set city = 'Porto Ferreira' where city = 'Portoferreira' and zip_code_prefix = 13660 and state = 'SP';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Sao Paulo' and zip_code_prefix = 14015 and state = 'SP';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Ribeirao Preto / Sao Paulo' and zip_code_prefix = 14079 and state = 'SP';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Riberao Preto' and zip_code_prefix = 14085 and state = 'SP';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Bonfim Paulista' and zip_code_prefix = 14110 and state = 'SP';
- update sales.olist_locations set city = 'Sao Jose do Rio Pardo' where city = 'Scao Jose do Rio Pardo' and zip_code_prefix = 13720 and state = 'SP';
- update sales.olist_locations set city = 'Sao Jose do Rio Preto' where city = 'Sao Jose do Rio Pret' and zip_code_prefix = 15051 and state = 'SP';
- update sales.olist_locations set city = 'Sao Jose do Rio Preto' where city = 'S Jose do Rio Preto' and zip_code_prefix = 15014 and state = 'SP';
- update sales.olist_locations set city = 'Rio de Janeiro' where city = 'Rio de Janeiro / Rio de Janeiro' and zip_code_prefix = 20081 and state = 'RJ';
- update sales.olist_locations set city = 'Rio de Janeiro' where city = 'Rio de Janeiro \rio de Janeiro' and zip_code_prefix = 22050 and state = 'RJ';
- update sales.olist_locations set city = 'Angra dos Reis' where city = 'Angra dos Reis Rj' and zip_code_prefix = 23943 and state = 'RJ';
- update sales.olist_locations set city = 'Paraty' where city = 'Parati' and zip_code_prefix = 23970 and state = 'RJ';
- update sales.olist_locations set city = 'Cariacica' where city = 'Cariacica / Es' and zip_code_prefix = 29142 and state = 'ES';
- update sales.olist_locations set city = 'Barbacena' where city = 'Barbacena/ Minas Gerais' and zip_code_prefix = 36200 and state = 'MG';
- update sales.olist_locations set city = 'Brasilia' where city = 'Brasilia Df' and zip_code_prefix = 71906 and state = 'DF';
- update sales.olist_locations set city = 'Dias Davila' where city = 'Dias D Avila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Dias D''avila' where city = 'Dias D Avila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Arraial D Ajuda' where city = 'Porto Seguro' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Arraial D''ajuda' where city = 'Arraial D Ajuda' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Arraial D''ajuda' where city = 'Arraial D''ajuda (porto Seguro)' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Planaltina' where city = 'Planaltina de Goias' and zip_code_prefix = 73752 and state = 'GO';
- update sales.olist_locations set city = 'Ji-parana' where city = 'Ji Parana' and zip_code_prefix = 76900 and state = 'RO';
- update sales.olist_locations set city = 'Bataypora' where city = 'Bataipora' and zip_code_prefix = 79760 and state = 'MS';
- update sales.olist_locations set city = 'Porto Seguro' where city = 'Arraial D''ajuda (porto Seguro)' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Arraial D Ajuda' where city = 'Arraial D''ajuda (porto Seguro)' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Arraial D''ajuda' where city = 'Porto Seguro' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Porto Seguro' where city = 'Arraial D Ajuda' and zip_code_prefix = 45816 and state = 'BA';
- update sales.olist_locations set city = 'Camboriu' where city = 'Balneario Camboriu' and zip_code_prefix = 88330 and state = 'SC';
- update sales.olist_locations set city = 'Brasopolis' where city = 'Brazopolis' and zip_code_prefix = 37530 and state = 'MG';
- update sales.olist_locations set city = 'Piumhii' where city = 'Piumhi' and zip_code_prefix = 37925 and state = 'MG';
- update sales.olist_locations set city = 'Balneario Picarras' where city = 'Picarras' and zip_code_prefix = 88380 and state = 'SC';
- update sales.olist_locations set city = 'Juazeiro do Norte' where city = 'Juzeiro do Norte' and zip_code_prefix = 63020 and state = 'CE';
- update sales.olist_locations set city = 'Maringa' where city = 'Vendas@creditparts.com.br' and zip_code_prefix = 87025 and state = 'PR';
- update sales.olist_locations set city = 'Itapage' where city = 'Itapaje' and zip_code_prefix = 62600 and state = 'CE';
- update sales.olist_locations set city = 'Jacarei' where city = 'Jacarei / Sao Paulo' and zip_code_prefix = 12306 and state = 'SP';
- update sales.olist_locations set city = 'Carapicuiba' where city = 'Carapicuiba / Sao Paulo' and zip_code_prefix = 6311 and state = 'SP';
- update sales.olist_locations set city = 'Maua' where city = 'Maua/sao Paulo' and zip_code_prefix = 9380 and state = 'SP';
- update sales.olist_locations set city = 'Mogi Das Cruzes' where city = 'Mogi Das Cruses' and zip_code_prefix = 8710 and state = 'SP';
- update sales.olist_locations set city = 'Mogi Das Cruzes' where city = 'Mogi Das Cruzes / Sp' and zip_code_prefix = 8717 and state = 'SP';
- update sales.olist_locations set city = 'Novo Hamburgo' where city = 'Novo Hamburgo, Rio Grande do Sul, Brasil' and zip_code_prefix = 93310 and state = 'RS';
- update sales.olist_locations set city = 'Taboao da Serra' where city = 'Sao Paulo' and zip_code_prefix = 6760 and state = 'SP';
- update sales.olist_locations set city = 'Pinhais' where city = 'Pinhais/pr' and zip_code_prefix = 83327 and state = 'PR';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Ribeirao Pretp' and zip_code_prefix = 14027 and state = 'SP';
- update sales.olist_locations set city = 'Sao Jose dos Pinhais' where city = 'Sao Jose dos Pinhas' and zip_code_prefix = 83040 and state = 'PR';
- update sales.olist_locations set city = 'Sao Miguel do Oeste' where city = 'Sao Miguel D''oeste' and zip_code_prefix = 89900 and state = 'SC';
- update sales.olist_locations set city = 'Florianopolis' where city = 'Floranopolis' and zip_code_prefix = 88056 and state = 'SC';
- update sales.olist_locations set city = 'Sao Sebastiao da Grama' where city = 'Sao Sebastiao da Grama/sp' and zip_code_prefix = 13790 and state = 'SP';
- update sales.olist_locations set city = 'Belo Horizonte' where city = 'Belo Horizont' and zip_code_prefix = 31255 and state = 'MG';
- update sales.olist_locations set city = 'Taboao da Serra' where city = 'Tabao da Serra' and zip_code_prefix = 6764 and state = 'SP';
- update sales.olist_locations set city = 'Santo Andre' where city = 'Sando Andre' and zip_code_prefix = 9190 and state = 'SP';
- update sales.olist_locations set city = 'Ribeirao Preto' where city = 'Robeirao Preto' and zip_code_prefix = 14078 and state = 'SP';
- update sales.olist_locations set city = 'Auriflama' where city = 'Auriflama/sp' and zip_code_prefix = 15350 and state = 'SP';
- update sales.olist_locations set city = 'Lages' where city = 'Lages - Sc' and zip_code_prefix = 88501 and state = 'SC';
- update sales.olist_locations set city = 'Maringa' where city = 'Parana' and zip_code_prefix = 87083 and state = 'PR';
- update sales.olist_locations set city = 'Balneario Camboriu' where city = 'Balenario Camboriu' and zip_code_prefix = 88330 and state = 'SC';
- 
- update sales.olist_locations set city = 'Ceilandia' where city = 'Brasilia' and zip_code_prefix = 72270 and state = 'DF';
- update sales.olist_locations set city = 'Sao Joao da Serra Negra' where city = 'Sao Benedito' and zip_code_prefix = 38749 and state = 'MG';
- update sales.olist_locations set city = 'Patrocinio' where city = 'Sao Benedito' and zip_code_prefix = 38749 and state = 'MG';
- update sales.olist_locations set city = 'Sao Caetano do Sul' where city = 'Sao Paulo' and zip_code_prefix = 9560 and state = 'SP';
- update sales.olist_locations set city = 'Guarapuava' where city = 'Colonia Vitoria' and zip_code_prefix = 85139 and state = 'PR';
- update sales.olist_locations set city = 'Ceilandia Norte' where city = 'Brasilia' and zip_code_prefix = 72270 and state = 'DF';
- update sales.olist_locations set city = 'Jaguariuna' where city = 'Monte Alegre do Sul' and zip_code_prefix = 13910 and state = 'SP';
- update sales.olist_locations set city = 'Camacari' where city = 'Abrantes' and zip_code_prefix = 42840 and state = 'BA';
- update sales.olist_locations set city = 'Presidente Venceslau' where city = 'Sao Paulo' and zip_code_prefix = 19400 and state = 'SP';
- update sales.olist_locations set city = 'Itaborai' where city = 'Rio de Janeiro' and zip_code_prefix = 24855 and state = 'RJ';
- update sales.olist_locations set city = 'Brasilia' where city = 'Guara' and zip_code_prefix = 71065 and state = 'DF';
- update sales.olist_locations set city = 'Fragosos' where city = 'Campo Alegre' and zip_code_prefix = 89294 and state = 'SC';
- update sales.olist_locations set city = 'Braganca Paulista' where city = 'Sao Paulo' and zip_code_prefix = 12903 and state = 'SP';
- update sales.olist_locations set city = 'Cachoeiras de Macacu' where city = 'Papucaia' and zip_code_prefix = 28695 and state = 'RJ';
- update sales.olist_locations set city = 'Camboriu' where city = 'Balenario Camboriu' and zip_code_prefix = 88330 and state = 'SC';
- update sales.olist_locations set city = 'Teofilo Otoni' where city = 'Castro Pires' and zip_code_prefix = 39801 and state = 'MG';
- update sales.olist_locations set city = 'Belo Horizonte' where city = 'Contagem' and zip_code_prefix = 31340 and state = 'MG';
- update sales.olist_locations set city = 'Aracatuba' where city = 'Sao Paulo' and zip_code_prefix = 16021 and state = 'SP';
- update sales.olist_locations set city = 'Mage' where city = 'Rio de Janeiro' and zip_code_prefix = 25900 and state = 'RJ';
- update sales.olist_locations set city = 'Dias D Avila' where city = 'Dias Davila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Vicosa' where city = 'Porto Firme' and zip_code_prefix = 36576 and state = 'MG';
- update sales.olist_locations set city = 'Para de Minas' where city = 'Centro' and zip_code_prefix = 35660 and state = 'MG';
- update sales.olist_locations set city = 'Florianopolis' where city = 'Sao Jose' and zip_code_prefix = 88075 and state = 'SC';
- update sales.olist_locations set city = 'Guaruja' where city = 'Vicente de Carvalho' and zip_code_prefix = 11450 and state = 'SP';
- update sales.olist_locations set city = 'Aruja' where city = 'Sao Paulo' and zip_code_prefix = 7411 and state = 'SP';
- update sales.olist_locations set city = 'Brasilia' where city = 'Taguatinga' and zip_code_prefix = 71939 and state = 'DF';
- update sales.olist_locations set city = 'Campo do Meio' where city = 'Minas Gerais' and zip_code_prefix = 37165 and state = 'MG';
- update sales.olist_locations set city = 'Tupa' where city = 'Sao Paulo' and zip_code_prefix = 17606 and state = 'SP';
- update sales.olist_locations set city = 'Palhoca' where city = 'Santa Catarina' and zip_code_prefix = 88135 and state = 'SC';
- update sales.olist_locations set city = 'Dias D''avila' where city = 'Dias Davila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Brasilia' where city = 'Taguatinga' and zip_code_prefix = 71937 and state = 'DF';
- update sales.olist_locations set city = 'Jaguariuna' where city = 'Monte Alegre do Sul' and zip_code_prefix = 13820 and state = 'SP';
- update sales.olist_locations set city = 'Nova Iguacu' where city = 'Rio de Janeiro' and zip_code_prefix = 26051 and state = 'RJ';
- update sales.olist_locations set city = 'Sobradinho' where city = 'Brasilia' and zip_code_prefix = 73060 and state = 'DF';
- update sales.olist_locations set city = 'Silvano' where city = 'Sao Benedito' and zip_code_prefix = 38749 and state = 'MG';
- update sales.olist_locations set city = 'Jurema' where city = 'Santo Antonio Das Queimadas' and zip_code_prefix = 55485 and state = 'PE';
- update sales.olist_locations set city = 'Itamira' where city = 'Apora' and zip_code_prefix = 48355 and state = 'BA';
-
-  update sales.olist_locations set city = 'Osasco' where city = 'Sao Paulo' and zip_code_prefix = 6280 and state = 'SP';
- update sales.olist_locations set city = 'Paicandu' where city = 'Paincandu' and zip_code_prefix = 87140 and state = 'PR';
- update sales.olist_locations set city = 'Sao Joao da Serra Negra' where city = 'Silvano' and zip_code_prefix = 38749 and state = 'MG';
- update sales.olist_locations set city = 'Patrocinio' where city = 'Silvano' and zip_code_prefix = 38749 and state = 'MG';
- update sales.olist_locations set city = 'Pindamonhangaba' where city = 'Sao Paulo' and zip_code_prefix = 12401 and state = 'SP';
- update sales.olist_locations set city = 'Guarapuava' where city = 'Vitoria' and zip_code_prefix = 85139 and state = 'PR';
- update sales.olist_locations set city = 'Dias D''avila' where city = 'Dias D Avila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Dias Davila' where city = 'Dias D Avila' and zip_code_prefix = 42850 and state = 'BA';
- update sales.olist_locations set city = 'Colonia Vitoria' where city = 'Vitoria' and zip_code_prefix = 85139 and state = 'PR';
- update sales.olist_locations set city = 'Balneario Camboriu' where city = 'Camboriu' and zip_code_prefix = 88330 and state = 'SC';
- update sales.olist_locations set city = 'Brasilia' where city = 'Gama' and zip_code_prefix = 72460 and state = 'DF';
- update sales.olist_locations set city = 'Barra do Jacare' where city = 'Andira-pr' and zip_code_prefix = 86385 and state = 'PR';
- update sales.olist_locations set city = 'Piracicaba' where city = 'Sao Paulo' and zip_code_prefix = 13420 and state = 'SP';
- 
- update sales.olist_locations set city = 'Cascavel' where city = 'Cascavael' and zip_code_prefix = 85802 and state = 'PR';
- update sales.olist_locations set city = 'Diadema' where city = 'Sao Paulo' and zip_code_prefix = 9911 and state = 'SP';
- update sales.olist_locations set city = 'Campos dos Goytacazes' where city = 'Rio de Janeiro' and zip_code_prefix = 28035 and state = 'RJ';
- update sales.olist_locations set city = 'Araras' where city = 'Sao Paulo' and zip_code_prefix = 13600 and state = 'SP';
- update sales.olist_locations set city = 'Paulo Afonso' where city = 'Bahia' and zip_code_prefix = 48602 and state = 'BA';
- update sales.olist_locations set city = 'Sao Paulo' where city = 'Pirituba' and zip_code_prefix = 5141 and state = 'SP';
- update sales.olist_locations set city = 'Laranjal Paulista' where city = 'Tatui' and zip_code_prefix = 18500 and state = 'SP';
-
- update  sales.olist_locations set city = 'Aguas Claras', state = 'DF' where city = 'Aguas Claras Df' and zip_code_prefix = 71900 and state = 'SP';
- update  sales.olist_locations set city = 'Aguas Claras' where city = 'Brasilia' and zip_code_prefix = 71900 and state = 'DF';
- update  sales.olist_locations set city = 'Santa Rita do Sapucai', state = 'MG' where city = 'Sao Paulo' and zip_code_prefix = 37540 and state = 'SP';
- update  sales.olist_locations set city = 'Rio Bonito'  where city = 'Boa Esperanca' and zip_code_prefix = 28810 and state = 'RJ';
- update  sales.olist_locations set city = 'Boa Esperanca'  where city = 'Rio Bonito' and zip_code_prefix = 28810 and state = 'RJ';
- update  sales.olist_locations set city = 'Brasilia'  where city = 'Aguas Claras' and zip_code_prefix = 71900 and state = 'DF';
- commit transaction;
-
- --Generated scripts to correct values in the sales.olist_locations
- select ' update sales.olist_locations set state = ''' + d.geolocation_state +  '''' + 
-	    ' where city = ''' + t.city + ''' and zip_code_prefix = ' + cast(t.zip_code_prefix as nvarchar) + ' and state = ''' + t.state + ''';' script
- from 
- (
-	select r.*, row_number() over(partition by zip_code_prefix order by (select null)) rank
-	from sales.olist_locations r
-  ) t left join 
- (
-    select distinct g.geolocation_zip_code_prefix, g.geolocation_state, g.geolocation_city
-	from sales.olist_geolocation g 
- )d on t.zip_code_prefix = d.geolocation_zip_code_prefix and  t.city = d.geolocation_city 
- where rank > 1 and t.state <> d.geolocation_state;
-
- begin transaction;
- update sales.olist_locations set state = 'PR' where city = 'Sao Jose dos Pinhais' and zip_code_prefix = 83020 and state = 'SP';
- update sales.olist_locations set state = 'SC' where city = 'Blumenau' and zip_code_prefix = 89052 and state = 'SP';
- update sales.olist_locations set state = 'RJ' where city = 'Volta Redonda' and zip_code_prefix = 27277 and state = 'SP';
- update sales.olist_locations set state = 'SC' where city = 'Laguna' and zip_code_prefix = 88790 and state = 'SP';
- update sales.olist_locations set state = 'SC' where city = 'Chapeco' and zip_code_prefix = 89803 and state = 'SP';
- update sales.olist_locations set state = 'SC' where city = 'Palhoca' and zip_code_prefix = 88136 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Curitiba' and zip_code_prefix = 80240 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Londrina' and zip_code_prefix = 86076 and state = 'SP';
- update sales.olist_locations set state = 'RJ' where city = 'Rio de Janeiro' and zip_code_prefix = 21210 and state = 'RN';
- update sales.olist_locations set state = 'SC' where city = 'Itajai' and zip_code_prefix = 88301 and state = 'SP';
- update sales.olist_locations set state = 'RJ' where city = 'Rio de Janeiro' and zip_code_prefix = 21320 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Curitiba' and zip_code_prefix = 81020 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Marechal Candido Rondon' and zip_code_prefix = 85960 and state = 'PA';
- update sales.olist_locations set state = 'RS' where city = 'Caxias do Sul' and zip_code_prefix = 95076 and state = 'SP';
- update sales.olist_locations set state = 'RS' where city = 'Caxias do Sul' and zip_code_prefix = 95055 and state = 'SP';
- update sales.olist_locations set state = 'RS' where city = 'Porto Alegre' and zip_code_prefix = 91520 and state = 'SP';
- update sales.olist_locations set state = 'RJ' where city = 'Rio de Janeiro' and zip_code_prefix = 22783 and state = 'SP';
- update sales.olist_locations set state = 'MG' where city = 'Belo Horizonte' and zip_code_prefix = 31160 and state = 'SP';
- update sales.olist_locations set state = 'MG' where city = 'Juiz de Fora' and zip_code_prefix = 36010 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Curitiba' and zip_code_prefix = 81560 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Laranjeiras do Sul' and zip_code_prefix = 85301 and state = 'SP';
- update sales.olist_locations set state = 'BA' where city = 'Ipira' and zip_code_prefix = 44600 and state = 'SP';
- update sales.olist_locations set state = 'ES' where city = 'Vila Velha' and zip_code_prefix = 29101 and state = 'SP';
- update sales.olist_locations set state = 'SC' where city = 'Florianopolis' and zip_code_prefix = 88075 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Marechal Candido Rondon' and zip_code_prefix = 85960 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Sertanopolis' and zip_code_prefix = 86170 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Pinhais' and zip_code_prefix = 83321 and state = 'SP';
- update sales.olist_locations set state = 'PR' where city = 'Goioere' and zip_code_prefix = 87360 and state = 'SP';
- update sales.olist_locations set state = 'MG' where city = 'Tocantins' and zip_code_prefix = 36512 and state = 'SP';
- update sales.olist_locations set state = 'MG' where city = 'Belo Horizonte' and zip_code_prefix = 31570 and state = 'SP';
- update sales.olist_locations set state = 'MG' where city = 'Andradas' and zip_code_prefix = 37795 and state = 'SP';
- update sales.olist_locations set state = 'RJ' where city = 'Rio Bonito' and zip_code_prefix = 28810 and state = 'SP';
- commit transaction;
-
- -- Removed dublicates in the sales.olist_locations table 
-begin transaction
-delete res
-from (
-select * 
-	from 
-	 (
-		 select r.*, row_number() over(partition by zip_code_prefix, state, city order by (select null)) rank
-		 from sales.olist_locations r
-	 ) t
- where rank > 1
- ) res;
- commit transaction
-
-  select * 
-	from 
-	 (
-		 select r.*, row_number() over(partition by zip_code_prefix order by (select null)) rank
-		 from sales.olist_locations r
-	 ) t
- where rank > 1
- order by zip_code_prefix
-
---Added Primary Key to the  sales.olist_locations table
-alter table sales.olist_locations add constraint pk_olist_locations primary key(zip_code_prefix);
-
---Anti Left Join Check for tables sales.olist_customers and sales.olist_locations
-select *
-from sales.olist_customers c left join sales.olist_locations l on
-c.customer_zip_code_prefix = l.zip_code_prefix
-where  l.zip_code_prefix is null;
---Anti Left Join Check for tables sales.olist_sellers and sales.olist_locations
-select *
-from sales.olist_sellers c left join sales.olist_locations l on
-c.seller_zip_code_prefix = l.zip_code_prefix
-where  l.zip_code_prefix is null;
-
-
---Removed columns "customer_city" and "customer_state" from sales.olist_customers 
-alter table sales.olist_customers drop column customer_city, customer_state;
---Removed columns "seller_city" and "seller_state" from sales.olist_sellers 
-alter table sales.olist_sellers drop column seller_city, seller_state;
-
---Added Foreign Key on column "customer_zip_code_prefix" to sales.olist_customers(zip_code_prefix)
-alter table sales.olist_customers add constraint fk_customers_zip_code foreign key(customer_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
---Added Foreign Key on column "seller_zip_code_prefix" to sales.olist_sellers(zip_code_prefix)
-alter table sales.olist_sellers add constraint fk_seller_zip_code foreign key(seller_zip_code_prefix) references sales.olist_locations(zip_code_prefix);
-
 --Removed dublicates in the sales.olist_geolocation
---Removed 17986 from 720346
 begin transaction
 delete res
 	from (
@@ -472,47 +192,43 @@ commit transaction;
 --Created Index on table sales.olist_geolocation
 create index ind_zip_code_prefix on sales.olist_geolocation(geolocation_zip_code_prefix);
 
---Renamed state in the sales.olist_locations to abbr_state
+select *
+from sales.olist_geolocation
 
 --Added new column state_full_name
-alter table sales.olist_locations add full_name_state nvarchar(50);
-update sales.olist_locations 
-set full_name_state = case  when abbr_state = 'AC' then 'Acre'
-							when abbr_state = 'AL' then 'Alagoas'
-							when abbr_state = 'AP' then 'Amapa'
-							when abbr_state = 'AM' then 'Amazonas'
-							when abbr_state = 'BA' then 'Bahia'
-							when abbr_state = 'CE' then 'Ceara'
-							when abbr_state = 'DF' then 'Distrito Federal'
-							when abbr_state = 'ES' then 'Espirito Santo'
-							when abbr_state = 'GO' then 'Goias'
-							when abbr_state = 'MA' then 'Maranhao'
-							when abbr_state = 'MT' then 'Mato Grosso'
-							when abbr_state = 'MS' then 'Mato Grosso do Sul'
-							when abbr_state = 'MG' then 'Minas Gerais'
-							when abbr_state = 'PA' then 'Para'
-							when abbr_state = 'PB' then 'Paraiba'
-							when abbr_state = 'PR' then 'Rio Grande do Sul'
-							when abbr_state = 'PE' then 'Pernambuco'
-							when abbr_state = 'PI' then 'Piaui'
-							when abbr_state = 'RJ' then 'Rio de Janeiro'
-							when abbr_state = 'RN' then 'Rio Grande do Norte'
-							when abbr_state = 'RS' then 'Rio Grande do Sul'
-							when abbr_state = 'RO' then 'Rondonia'
-							when abbr_state = 'RR' then 'Roraima'
-							when abbr_state = 'SC' then 'Santa Catarina'
-							when abbr_state = 'SP' then 'Sao Paulo'
-							when abbr_state = 'SE' then 'Sergipe'
-							when abbr_state = 'TO' then 'Tocantins' end;
+alter table  sales.olist_geolocation add full_name_state nvarchar(50);
 
---Corrected city names in the sales.olist_geolocation table
-begin transaction
-update sales.olist_geolocation
-set geolocation_city = translate(geolocation_city, 'ááãâçéêíóôõúü', 'aaaaceeiooouu');
-commit transaction;	
+update sales.olist_geolocation 
+set full_name_state = case  when geolocation_state = 'AC' then 'Acre'
+							when geolocation_state = 'AL' then 'Alagoas'
+							when geolocation_state = 'AP' then 'Amapa'
+							when geolocation_state = 'AM' then 'Amazonas'
+							when geolocation_state = 'BA' then 'Bahia'
+							when geolocation_state = 'CE' then 'Ceara'
+							when geolocation_state = 'DF' then 'Distrito Federal'
+							when geolocation_state = 'ES' then 'Espirito Santo'
+							when geolocation_state = 'GO' then 'Goias'
+							when geolocation_state = 'MA' then 'Maranhao'
+							when geolocation_state = 'MT' then 'Mato Grosso'
+							when geolocation_state = 'MS' then 'Mato Grosso do Sul'
+							when geolocation_state = 'MG' then 'Minas Gerais'
+							when geolocation_state = 'PA' then 'Para'
+							when geolocation_state = 'PB' then 'Paraiba'
+							when geolocation_state = 'PR' then 'Parana'
+							when geolocation_state = 'PE' then 'Pernambuco'
+							when geolocation_state = 'PI' then 'Piaui'
+							when geolocation_state = 'RJ' then 'Rio de Janeiro'
+							when geolocation_state = 'RN' then 'Rio Grande do Norte'
+							when geolocation_state = 'RS' then 'Rio Grande do Sul'
+							when geolocation_state = 'RO' then 'Rondonia'
+							when geolocation_state = 'RR' then 'Roraima'
+							when geolocation_state = 'SC' then 'Santa Catarina'
+							when geolocation_state = 'SP' then 'Sao Paulo'
+							when geolocation_state = 'SE' then 'Sergipe'
+							when geolocation_state = 'TO' then 'Tocantins' end;
 
 --Checked city name for correctness
---Quilometro 14 do Mutum, Espirito Santo, Brazil is valid name
+--Quilômetro 14 do Mutum is the community in Brazil
 select *
-from sales.olist_locations
-where city like '%[0-9]%';
+from sales.olist_geolocation
+where geolocation_city like '%[0-9]%';
